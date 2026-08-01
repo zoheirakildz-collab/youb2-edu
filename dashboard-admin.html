@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - المدير العام (الأدمن)</title>
+    <!-- استدعاء خط Cairo الاحترافي -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --primary-accent: #0f172a;
+            --brand-color: #2563eb;
+            --brand-hover: #1d4ed8;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        /* شريط التنقل العلوي */
+        .navbar {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .navbar-brand .badge-title {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar h2 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .container {
+            padding: 32px 24px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* شبكة النماذج العلوية */
+        .grid-forms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        /* تصميم البطاقات */
+        .card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: #f8fafc;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--brand-color);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        /* الأزرار */
+        .btn {
+            background-color: var(--brand-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background-color: var(--brand-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            color: #fff;
+        }
+
+        .btn-warning:hover {
+            background-color: #b45309;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        /* الجداول */
+        .table-card {
+            margin-bottom: 32px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-top: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            text-align: right;
+            font-size: 13.5px;
+        }
+
+        th, td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 12.5px;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        code {
+            background-color: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 6px;
+            color: #e11d48;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="navbar-brand">
+            <h2>لوحة إدارة النظام (الأدمن)</h2>
+            <span class="badge-title">المقاطعة البيداغوجية -يوب 2-</span>
+        </div>
+        <button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
+    </div>
+
+    <div class="container">
+        
+        <div class="grid-forms">
+            <!-- إضافة مدرسة جديدة -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>إضافة مدرسة جديدة</h3>
+                </div>
+                <form onsubmit="handleAddSchool(event)">
+                    <div class="form-group">
+                        <label>اسم المدرسة:</label>
+                        <input type="text" id="schoolName" placeholder="أدخل اسم المدرسة..." required>
+                    </div>
+                    <button type="submit" class="btn">حفظ المدرسة</button>
+                </form>
+            </div>
+
+            <!-- إضافة/تعديل حساب -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 id="formTitle">إنشاء حساب جديد (مدير / مفتش)</h3>
+                </div>
+                <form onsubmit="handleSaveUser(event)">
+                    <input type="hidden" id="editRowIndex" value="">
+                    
+                    <div class="form-group">
+                        <label>اسم المستخدم:</label>
+                        <input type="text" id="newUsername" placeholder="اسم المستخدم للدخول..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور:</label>
+                        <input type="text" id="newPassword" placeholder="كلمة المرور..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع الحساب:</label>
+                        <select id="newRole" onchange="toggleSchoolSelect()" required>
+                            <option value="director">مدير مدرسة</option>
+                            <option value="inspector">مفتش</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="schoolSelectGroup">
+                        <label>إسناد إلى مدرسة:</label>
+                        <select id="assignedSchool">
+                            <option value="">-- اختر مدرسة --</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="submit" id="saveUserBtn" class="btn" style="flex: 1;">إنشاء الحساب</button>
+                        <button type="button" id="cancelEditBtn" class="btn btn-warning" style="display:none;" onclick="resetUserForm()">إلغاء التعديل</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- قائمة المدارس -->
+        <div class="card table-card">
+            <div class="card-header">
+                <h3>قائمة المدارس والمدراء المسندين</h3>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المدرسة</th>
+                            <th>المدير المسند</th>
+                            <th style="width: 100px;">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schoolsTableBody">
+                        <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">جاري تحميل المدارس...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- قائمة الحسابات -->
+        <div class="card table-card">
+            <div class="card-header">
+                <h3>قائمة الحسابات المسجلة (مدراء / مفتشين)</h3>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المستخدم</th>
+                            <th>كلمة المرور</th>
+                            <th>الصلاحية</th>
+                            <th style="width: 150px;">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">جاري تحميل الحسابات...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEmbj3B77F_3bL4kHqGX0IhqaCCMEyDpAnavutAZlZ2FescguTM3xmh-8Ikb9-0cBV/exec";
+    let globalSchools = [];
+
+    window.onload = function() {
+        const session = JSON.parse(localStorage.getItem("userSession"));
+        if (!session || session.role !== "admin") {
+            window.location.href = "index.html";
+        } else {
+            loadAdminData();
+        }
+    };
+
+    async function loadAdminData() {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getAdminData" })
+            });
+            const result = await response.json();
+
+            if (result.status === "success") {
+                globalSchools = result.schools;
+                renderSchools(result.schools);
+                renderUsers(result.users);
+                populateSchoolDropdown(result.schools);
+            }
+        } catch (error) {
+            console.error("خطأ في جلب البيانات:", error);
+        }
+    }
+
+    function renderSchools(schools) {
+        const tbody = document.getElementById("schoolsTableBody");
+        if (schools.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='3' style='text-align: center;'>لا توجد مدارس مسجلة.</td></tr>";
+            return;
+        }
+        tbody.innerHTML = schools.map(s => `
+            <tr>
+                <td><b>${s.name}</b></td>
+                <td>${s.assignedDirector}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteSchool(${s.rowIndex})">حذف</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function renderUsers(users) {
+        const tbody = document.getElementById("usersTableBody");
+        if (users.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='4' style='text-align: center;'>لا توجد حسابات مسجلة.</td></tr>";
+            return;
+        }
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td><b>${u.username}</b></td>
+                <td><code>${u.password}</code></td>
+                <td>${u.role === 'director' ? 'مدير مدرسة' : u.role === 'inspector' ? 'مفتش' : u.role}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="prepareEditUser(${u.rowIndex}, '${u.username}', '${u.password}', '${u.role}')">تعديل</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.rowIndex})">حذف</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function populateSchoolDropdown(schools) {
+        const select = document.getElementById("assignedSchool");
+        select.innerHTML = '<option value="">-- اختر مدرسة --</option>';
+        schools.forEach(s => {
+            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+        });
+    }
+
+    function toggleSchoolSelect() {
+        const role = document.getElementById("newRole").value;
+        const group = document.getElementById("schoolSelectGroup");
+        group.style.display = (role === "director") ? "block" : "none";
+    }
+
+    async function handleAddSchool(e) {
+        e.preventDefault();
+        const schoolName = document.getElementById("schoolName").value.trim();
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "addSchool", schoolName: schoolName })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            alert(result.message);
+            document.getElementById("schoolName").value = "";
+            loadAdminData();
+        }
+    }
+
+    async function handleSaveUser(e) {
+        e.preventDefault();
+        const rowIndex = document.getElementById("editRowIndex").value;
+        const action = rowIndex ? "editUser" : "addUser";
+
+        const data = {
+            action: action,
+            rowIndex: rowIndex,
+            username: document.getElementById("newUsername").value.trim(),
+            password: document.getElementById("newPassword").value.trim(),
+            role: document.getElementById("newRole").value,
+            schoolId: document.getElementById("assignedSchool").value
+        };
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            alert(result.message);
+            resetUserForm();
+            loadAdminData();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    function prepareEditUser(rowIndex, username, password, role) {
+        document.getElementById("formTitle").textContent = "تعديل بيانات الحساب";
+        document.getElementById("editRowIndex").value = rowIndex;
+        document.getElementById("newUsername").value = username;
+        document.getElementById("newPassword").value = password;
+        document.getElementById("newRole").value = role;
+        
+        toggleSchoolSelect();
+
+        if (role === "director") {
+            const currentSchool = globalSchools.find(s => s.assignedDirector === username);
+            if (currentSchool) {
+                document.getElementById("assignedSchool").value = currentSchool.id;
+            } else {
+                document.getElementById("assignedSchool").value = "";
+            }
+        }
+
+        document.getElementById("saveUserBtn").textContent = "تحديث البيانات والإسناد";
+        document.getElementById("cancelEditBtn").style.display = "inline-block";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetUserForm() {
+        document.getElementById("formTitle").textContent = "إنشاء حساب جديد (مدير / مفتش)";
+        document.getElementById("editRowIndex").value = "";
+        document.getElementById("newUsername").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("assignedSchool").value = "";
+        document.getElementById("saveUserBtn").textContent = "إنشاء الحساب";
+        document.getElementById("cancelEditBtn").style.display = "none";
+    }
+
+    async function deleteUser(rowIndex) {
+        if (!confirm("هل أنت تأكد من رغبتك في حذف هذا الحساب؟")) return;
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "deleteUser", rowIndex: rowIndex })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            alert(result.message);
+            loadAdminData();
+        }
+    }
+
+    async function deleteSchool(rowIndex) {
+        if (!confirm("هل أنت تأكد من حذف هذه المدرسة؟")) return;
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "deleteSchool", rowIndex: rowIndex })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            alert(result.message);
+            loadAdminData();
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("userSession");
+        window.location.href = "index.html";
+    }
+</script>
+</body>
+</html>
