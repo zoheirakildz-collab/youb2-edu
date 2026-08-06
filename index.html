@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البوابة الوطنية - النظام الرقمي لمتابعة الوضعية الإدارية للأساتذة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1b4332;
+            --primary-hover: #2d6a4f;
+            --accent-color: #d4af37;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --input-border: #d8e2dc;
+        }
+
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; position: relative; overflow: hidden;
+        }
+
+        body::before {
+            content: ''; position: absolute; width: 350px; height: 350px;
+            border-radius: 50%; background: rgba(255, 255, 255, 0.05);
+            top: -50px; right: -50px; z-index: 1;
+        }
+
+        body::after {
+            content: ''; position: absolute; width: 450px; height: 450px;
+            border-radius: 50%; background: rgba(255, 255, 255, 0.03);
+            bottom: -100px; left: -100px; z-index: 1;
+        }
+
+        .portal-card {
+            background-color: var(--card-bg);
+            padding: 40px 35px; border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+            width: 90%; max-width: 440px;
+            position: relative; z-index: 2;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px); text-align: center;
+        }
+
+        .header-brand { margin-bottom: 25px; }
+        .header-brand h1 {
+            font-size: 14px; font-weight: 700; color: #d4af37;
+            background-color: #f8f9fa; padding: 6px 12px;
+            border-radius: 20px; display: inline-block;
+            margin: 0 0 12px 0; border: 1px solid #e9ecef;
+        }
+
+        .header-brand h2 {
+            font-size: 19px; font-weight: 700; color: var(--primary-color);
+            margin: 0; line-height: 1.4; position: relative; padding-bottom: 12px;
+        }
+
+        .header-brand h2::after {
+            content: ''; position: absolute; bottom: 0; right: 50%;
+            transform: translateX(50%); width: 60px; height: 3px;
+            background-color: var(--accent-color); border-radius: 2px;
+        }
+
+        .form-group { margin-bottom: 20px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-color); font-size: 14px; }
+        .form-group select {
+            width: 100%; padding: 12px 15px; border: 1.5px solid var(--input-border);
+            border-radius: 8px; font-size: 15px; background-color: #f8fafc;
+            color: var(--text-color); cursor: pointer; transition: all 0.3s ease;
+        }
+
+        .form-group select:focus {
+            outline: none; border-color: #2c5364; background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(44, 83, 100, 0.15);
+        }
+
+        .btn-submit {
+            width: 100%; background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+            color: white; border: none; padding: 14px; border-radius: 8px;
+            font-size: 16px; cursor: pointer; font-weight: 700; margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(27, 67, 50, 0.25); transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(27, 67, 50, 0.35);
+        }
+
+        .btn-submit:disabled { background: #a5a5a5; cursor: not-allowed; box-shadow: none; }
+        .footer-text { text-align: center; margin-top: 25px; font-size: 12px; color: #8d99ae; }
+    </style>
+</head>
+<body>
+
+    <div class="portal-card">
+        <div class="header-brand">
+            <h1>البوابة الوطنية</h1>
+            <h2>النظام الرقمي الخاص بمتابعة الوضعية الإدارية للأساتذة</h2>
+        </div>
+
+        <div class="form-group">
+            <label for="stateSelect">اختر الولاية:</label>
+            <select id="stateSelect">
+                <option value="">-- جاري تحميل الولايات --</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="districtSelect">المقاطعة البيداغوجية:</label>
+            <select id="districtSelect" disabled>
+                <option value="">-- اختر الولاية أولاً --</option>
+            </select>
+        </div>
+
+        <button class="btn-submit" id="enterBtn" onclick="goToDistrict()" disabled>التالي (تسجيل الدخول)</button>
+
+        <div class="footer-text">
+            جميع الحقوق محفوظة © النظام الرقمي
+        </div>
+    </div>
+
+<script>
+    // رابط الملف المركزي المعتمد
+    const MAIN_PORTAL_URL = "https://script.google.com/macros/s/AKfycbxpMWiDgT8pgT_jkdDmP9mwfLZD1Wkaz63jWZAxy8iyk5maJNZCzZnQp3eS4jPEBIjshQ/exec";
+
+    let globalPortalData = {};
+
+    const stateSelect = document.getElementById('stateSelect');
+    const districtSelect = document.getElementById('districtSelect');
+    const enterBtn = document.getElementById('enterBtn');
+
+    // جلب البيانات ديناميكياً من الملف المركزي فور فتح الصفحة
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch(`${MAIN_PORTAL_URL}?action=getPortalData`);
+            const result = await response.json();
+
+            if (result.status === "success" && result.data) {
+                globalPortalData = result.data;
+                
+                stateSelect.innerHTML = '<option value="">-- اختر الولاية --</option>';
+                Object.keys(globalPortalData).forEach(state => {
+                    stateSelect.innerHTML += `<option value="${state}">${state}</option>`;
+                });
+            } else {
+                stateSelect.innerHTML = '<option value="">لا توجد ولايات مسجلة</option>';
+            }
+        } catch (error) {
+            stateSelect.innerHTML = '<option value="">خطأ في الاتصال بالنظام المركزي</option>';
+        }
+    });
+
+    // عند تغيير الولاية، تعبئة المقاطعات التابعة لها تلقائياً
+    stateSelect.addEventListener('change', function() {
+        const selectedState = this.value;
+        districtSelect.innerHTML = '<option value="">-- اختر المقاطعة --</option>';
+        districtSelect.disabled = true;
+        enterBtn.disabled = true;
+        
+        if (selectedState && globalPortalData[selectedState]) {
+            districtSelect.disabled = false;
+            globalPortalData[selectedState].forEach(district => {
+                districtSelect.innerHTML += `<option value="${district}">${district}</option>`;
+            });
+        }
+    });
+
+    // تفعيل زر الدخول عند اختيار المقاطعة
+    districtSelect.addEventListener('change', function() {
+        if (this.value) {
+            enterBtn.disabled = false;
+        } else {
+            enterBtn.disabled = true;
+        }
+    });
+
+    // عند الضغط على زر الدخول، جلب رابط المقاطعة والانتقال لصفحة تسجيل الدخول الموحدة
+    async function goToDistrict() {
+        const districtName = districtSelect.value;
+        if (!districtName) return;
+
+        enterBtn.disabled = true;
+        enterBtn.textContent = "جاري جلب بيانات المقاطعة...";
+
+        try {
+            const response = await fetch(`${MAIN_PORTAL_URL}?action=getScriptUrl&district=${encodeURIComponent(districtName)}`);
+            const result = await response.json();
+
+            if (result.status === "success" && result.scriptUrl) {
+                // حفظ الرابط واسم المقاطعة في ذاكرة المتصفح
+                localStorage.setItem("currentScriptUrl", result.scriptUrl);
+                localStorage.setItem("currentDistrictName", districtName);
+
+                // الانتقال لصفحة تسجيل الدخول الموحدة
+                window.location.href = "login.html";
+            } else {
+                alert("خطأ: لم يتم العثور على الرابط الخاص بهذه المقاطعة.");
+                enterBtn.disabled = false;
+                enterBtn.textContent = "التالي (تسجيل الدخول)";
+            }
+        } catch (error) {
+            alert("حدث خطأ أثناء الاتصال بالنظام المركزي.");
+            enterBtn.disabled = false;
+            enterBtn.textContent = "التالي (تسجيل الدخول)";
+        }
+    }
+</script>
+</body>
+</html>

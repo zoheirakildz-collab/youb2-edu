@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - المفتش</title>
+    <!-- استدعاء خط Cairo الاحترافي ومكتبة SheetJS للتصدير -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #1e293b;
+            --brand-color: #6f42c1;
+            --brand-hover: #59319d;
+            --brand-light: #f3f0ff;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        /* شريط التنقل العلوي */
+        .navbar {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .navbar-brand .badge-title {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar h2 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .container {
+            padding: 32px 24px;
+            max-width: 1300px;
+            margin: auto;
+        }
+
+        /* تبويبات التنقل */
+        .tab-menu {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            position: relative;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            background-color: var(--brand-color);
+            color: white;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 800;
+            display: none;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* تصميم البطاقات */
+        .card {
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            margin-bottom: 28px;
+            transition: all 0.2s ease;
+        }
+
+        .card h3 {
+            color: var(--brand-color);
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--brand-color);
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            text-align: right;
+        }
+
+        .stat-card.success { border-top-color: var(--success); }
+        .stat-card.warning { border-top-color: var(--warning); }
+        .stat-card.danger { border-top-color: var(--danger); }
+
+        .stat-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .stat-desc {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13.5px;
+            background-color: #f8fafc;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--brand-color);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.15);
+        }
+
+        .btn {
+            background-color: var(--brand-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background-color: var(--brand-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success { background-color: var(--success); }
+        .btn-secondary { background-color: #64748b; }
+        .btn-danger { background-color: var(--danger); }
+        .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+        .export-group { display: flex; gap: 8px; }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f8fafc; }
+
+        .badge {
+            background-color: var(--brand-light);
+            color: var(--brand-color);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid #e9d5ff;
+            display: inline-block;
+        }
+
+        .badge-count {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+        }
+
+        .score-highlight { color: var(--brand-color); font-weight: 800; font-size: 14px; }
+        .class-highlight { background-color: #eff6ff; color: #1d4ed8; padding: 3px 8px; border-radius: 6px; font-weight: 700; }
+
+        .chat-box {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f8fafc;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message { padding: 10px 14px; border-radius: 10px; max-width: 75%; font-size: 13.5px; }
+        .chat-message.sent { background-color: var(--brand-color); color: white; align-self: flex-start; }
+        .chat-message.received { background-color: #e2e8f0; color: #0f172a; align-self: flex-end; }
+
+        /* تنسيق نافذة الحوار المنسدلة (Modal) الاحترافية */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .custom-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .custom-modal {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        .custom-modal-overlay.active .custom-modal {
+            transform: translateY(0);
+        }
+        .custom-modal h4 { color: var(--primary); font-size: 18px; margin-bottom: 10px; }
+        .custom-modal p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+        .custom-modal-actions { display: flex; justify-content: center; gap: 10px; }
+
+        .print-header { display: none; }
+        .print-footer { display: none; }
+
+        @page { size: A4 landscape; margin: 5mm; }
+
+        @media print {
+            body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; font-size: 8.5pt !important; }
+            .navbar, .tab-menu, .filter-card, .card-header, .btn, .export-group { display: none !important; }
+            .container { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+            .card { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: transparent !important; }
+
+            .print-header {
+                display: block !important;
+                width: 100% !important;
+                text-align: center !important;
+                margin-bottom: 12px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 6px;
+            }
+            .print-header h3, .print-header h4, .print-header p {
+                width: 100% !important;
+                text-align: center !important;
+                display: block !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                color: black !important;
+            }
+            .print-header h3 { font-size: 13pt; font-weight: bold; margin-bottom: 2px; }
+            .print-header h4 { font-size: 11pt; font-weight: bold; margin-bottom: 2px; }
+            .print-header p { font-size: 9.5pt; font-weight: normal; margin-top: 3px; }
+
+            .print-footer {
+                display: block !important;
+                margin-top: 30px;
+                text-align: left;
+                padding-left: 50px;
+                font-size: 11pt;
+                font-weight: bold;
+            }
+            .print-footer div { display: inline-block; text-align: center; }
+
+            .table-responsive { overflow: visible !important; border: none !important; width: 100% !important; }
+            table { width: 100% !important; border-collapse: collapse !important; border: 1px solid #000 !important; font-size: 8pt !important; table-layout: auto !important; }
+            th, td { border: 1px solid #000 !important; padding: 4px 2px !important; text-align: center !important; white-space: normal !important; word-break: break-word; }
+            th { background-color: #f2f2f2 !important; color: black !important; font-weight: bold !important; }
+            .badge, .class-highlight { background: none !important; border: none !important; color: black !important; padding: 0 !important; font-weight: normal !important; }
+            .score-highlight { color: black !important; font-weight: bold !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- نافذة منسدلة مخصصة (Modal) للتأكيد -->
+    <div id="customModal" class="custom-modal-overlay">
+        <div class="custom-modal">
+            <h4 id="modalTitle">تأكيد الإجراء</h4>
+            <p id="modalMessage">هل أنت متأكد من تنفيذ هذا الإجراء؟</p>
+            <div class="custom-modal-actions">
+                <button id="modalConfirmBtn" class="btn btn-danger">تأكيد</button>
+                <button onclick="closeModal()" class="btn btn-secondary">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar">
+        <div class="navbar-brand">
+            <h2>لوحة الإشراف والتفتيش التربوي</h2>
+            <span class="badge-title" id="districtBadgeTitle">جاري التحميل...</span>
+        </div>
+        <button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
+    </div>
+
+    <div class="container">
+
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="switchTab('teachersTab', this)">تصفية واستعراض الأساتذة</button>
+            <button class="tab-btn" onclick="switchTab('statsTab', this)">الإحصائيات ومتابعة التقادم</button>
+            <button class="tab-btn" onclick="switchTab('chatTab', this)">
+                الرسائل والمراسلات
+                <span id="chatNotificationBadge" class="notification-badge">0</span>
+            </button>
+        </div>
+
+        <!-- التبويب الأول: تصفية وجدول الأساتذة -->
+        <div id="teachersTab" class="tab-content active">
+            <div class="card filter-card">
+                <h3>تصفية المعايير والبحث المتقدم</h3>
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label>تحديد المدرسة:</label>
+                        <select id="schoolFilter" onchange="applyFilters()">
+                            <option value="">جميع المدارس</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>القسم المسند:</label>
+                        <select id="classFilter" onchange="applyFilters()">
+                            <option value="">جميع الأقسام</option>
+                            <option value="التحضيري">التحضيري</option>
+                            <option value="السنة الأولى">السنة الأولى</option>
+                            <option value="السنة الثانية">السنة الثانية</option>
+                            <option value="السنة الثالثة">السنة الثالثة</option>
+                            <option value="السنة الرابعة">السنة الرابعة</option>
+                            <option value="السنة الخامسة">السنة الخامسة</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ترتيب حسب آخر تفتيش:</label>
+                        <select id="sortInspection" onchange="applyFilters()">
+                            <option value="">تلقائي</option>
+                            <option value="desc">الأحدث أولاً</option>
+                            <option value="asc">الأقدم أولاً</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ترتيب حسب آخر زيارة توجيهية:</label>
+                        <select id="sortGuidance" onchange="applyFilters()">
+                            <option value="">تلقائي</option>
+                            <option value="desc">الأحدث أولاً</option>
+                            <option value="asc">الأقدم أولاً</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>بحث باسم المعلم:</label>
+                        <input type="text" id="searchName" placeholder="أدخل اسم المعلم..." oninput="applyFilters()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="print-header">
+                    <h3>الجمهورية الجزائرية الديمقراطية الشعبية</h3>
+                    <h4>وزارة التربية الوطنية</h4>
+                    <p id="printDistrictText">المقاطعة البيداغوجية | تقرير وضعية الأساتذة (مفتشية التعليم الابتدائي)</p>
+                </div>
+
+                <div class="card-header">
+                    <h3>
+                        <span>الوضعية الإدارية للأساتذة</span>
+                        <span class="badge-count"><span id="teacherCount">0</span> أستاذ</span>
+                    </h3>
+                    <div class="export-group">
+                        <button class="btn btn-success btn-sm" onclick="exportInspectorTeachersExcel()">تصدير Excel</button>
+                        <button class="btn btn-secondary btn-sm" onclick="printInspectorTeachersPDF()">طباعة PDF</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>المدرسة</th>
+                                <th>الاسم واللقب</th>
+                                <th>اللقب الأصلي للزوجة</th>
+                                <th>تاريخ ومكان الميلاد</th>
+                                <th>الإطار</th>
+                                <th>الصنف</th>
+                                <th>الدرجة</th>
+                                <th>تاريخ السريان</th>
+                                <th>نقطة التفتيش</th>
+                                <th>تاريخ آخر تفتيش</th>
+                                <th>تاريخ آخر زيارة توجيهية</th>
+                                <th>تاريخ أول تعيين</th>
+                                <th>تاريخ التثبيت</th>
+                                <th>الشهادة والمؤهل العلمى</th>
+                                <th>القسم المسند</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachersTableBody">
+                            <tr><td colspan="15" style="text-align: center; color: var(--text-muted);">جاري تحميل البيانات...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="print-footer">
+                    <div>إمضاء وختم المفتش</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- التبويب الثاني: الإحصائيات ومتابعة التقادم الميداني -->
+        <div id="statsTab" class="tab-content">
+            <div class="card">
+                <h3>ملخص إحصائيات التفتيش، الزيارات، والتثبيت</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">إجمالي المدارس</div>
+                        <div class="stat-value" id="statSchoolsCount">0</div>
+                        <div class="stat-desc">مدرسة ابتدائية بالمقاطعة</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-title">إجمالي الأساتذة المسجلين</div>
+                        <div class="stat-value" id="statTeachersCount">0</div>
+                        <div class="stat-desc">أستاذ في مختلف الأقسام</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-title">الأساتذة المثبتون</div>
+                        <div class="stat-value" id="statConfirmedCount">0</div>
+                        <div class="stat-desc">تم تثبيتهم رسمياً</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-title">الأساتذة غير المثبتين</div>
+                        <div class="stat-value" id="statUnconfirmedCount">0</div>
+                        <div class="stat-desc">متربصون بانتظار التثبيت</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">الأساتذة الذين تم تفتيشهم</div>
+                        <div class="stat-value" id="statInspectedCount">0</div>
+                        <div class="stat-desc">لديهم تاريخ تفتيش مسجل</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-title">الزيارات التوجيهية المنفذة</div>
+                        <div class="stat-value" id="statGuidanceCount">0</div>
+                        <div class="stat-desc">تمت متابعتهم ميدانياً</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بطاقة التنبيه بالتقادم وإدخال عدد السنوات -->
+            <div class="card">
+                <h3>متابعة تقادم المتابعة وتحديد المتأخرين ميدانياً</h3>
+                <div class="filter-grid" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label>نوع المتابعة:</label>
+                        <select id="filterType" onchange="filterTeachersByYearsLag()">
+                            <option value="inspection">آخر تفتيش</option>
+                            <option value="guidance">آخر زيارة توجيهية</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>عدد السنوات (أو أكثر):</label>
+                        <input type="number" id="inputYears" min="0" max="20" value="3" placeholder="مثال: 3" oninput="filterTeachersByYearsLag()">
+                    </div>
+                    <div class="form-group">
+                        <label>تحديد المدرسة (اختياري):</label>
+                        <select id="lagSchoolFilter" onchange="filterTeachersByYearsLag()">
+                            <option value="">جميع المدارس</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>تحديد القسم (اختياري):</label>
+                        <select id="lagClassFilter" onchange="filterTeachersByYearsLag()">
+                            <option value="">جميع الأقسام</option>
+                            <option value="التحضيري">التحضيري</option>
+                            <option value="السنة الأولى">السنة الأولى</option>
+                            <option value="السنة الثانية">السنة الثانية</option>
+                            <option value="السنة الثالثة">السنة الثالثة</option>
+                            <option value="السنة الرابعة">السنة الرابعة</option>
+                            <option value="السنة الخامسة">السنة الخامسة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الاسم واللقب</th>
+                                <th>المدرسة</th>
+                                <th>القسم المسند</th>
+                                <th>نقطة التفتيش</th>
+                                <th>تاريخ آخر عملية</th>
+                                <th>المدة المنقضية (تنبيه التقادم)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dateFilteredTableBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">جاري تصفية الأساتذة...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- التبويب الثالث: المراسلات للـ المفتش -->
+        <div id="chatTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>المراسلات المباشرة (مع الأدمن أو المديرين)</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="loadInspectorChat()">تحديث المحادثة</button>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDeleteInspectorChat()">حذف المحادثة بالكامل</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>اختر الطرف الآخر للمراسلة:</label>
+                    <select id="chatTargetSelect" onchange="loadInspectorChat()">
+                        <option value="admin">مدير النظام (الأدمن)</option>
+                    </select>
+                </div>
+
+                <div class="chat-box" id="inspectorChatBox">
+                    <div style="text-align: center; color: var(--text-muted); margin-top: 100px;">لا توجد رسائل سابقة.</div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="inspectorChatMessage" placeholder="اكتب رسالتك..." style="flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <button class="btn" onclick="sendInspectorMessage()">إرسال الرسالة</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    // 1. جلب رابط الـ Web App الخاص بالمقاطعة واسمها مباشرة من ذاكرة المتصفح
+    const SCRIPT_URL = localStorage.getItem("currentScriptUrl");
+    const currentDistrictName = localStorage.getItem("currentDistrictName");
+
+    // التحقق من أن المستخدم اختار مقاطعة من البوابة الرئيسية مسبقاً
+    if (!SCRIPT_URL) {
+        alert("يرجى اختيار الولاية والمقاطعة أولاً من البوابة الرئيسية.");
+        window.location.href = "index.html";
+    }
+
+    let allSchools = [];
+    let allTeachers = [];
+    let currentFilteredTeachers = [];
+    let currentUsername = "";
+    let globalDistrictName = currentDistrictName || "المقاطعة البيداغوجية";
+
+    const dzMonths = [
+        "جانفي", "فيفري", "مارس", "أفريل", "ماي", "جوان",
+        "جويلية", "أوت", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+    ];
+
+    // دالة تحديث اسم المقاطعة في الواجهة
+    function fetchDistrictName() {
+        if (currentDistrictName) {
+            globalDistrictName = currentDistrictName;
+            document.getElementById("districtBadgeTitle").textContent = globalDistrictName;
+            const printText = document.querySelector(".print-header p");
+            if (printText) {
+                printText.textContent = "المقاطعة البيداغوجية: " + globalDistrictName + " | تقرير وضعية الأساتذة (مفتشية التعليم الابتدائي)";
+            }
+        } else {
+            document.getElementById("districtBadgeTitle").textContent = "المقاطعة البيداغوجية";
+        }
+    }
+
+    /* إدارة النافذة المنسدلة المخصصة (Modal) للتأكيد */
+    function showModal(title, message, confirmCallback, btnClass = 'btn-danger') {
+        const modal = document.getElementById("customModal");
+        document.getElementById("modalTitle").textContent = title;
+        document.getElementById("modalMessage").textContent = message;
+        
+        const confirmBtn = document.getElementById("modalConfirmBtn");
+        confirmBtn.className = `btn ${btnClass}`;
+        
+        const newBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+        
+        newBtn.onclick = function() {
+            closeModal();
+            confirmCallback();
+        };
+
+        modal.classList.add("active");
+    }
+
+    function closeModal() {
+        document.getElementById("customModal").classList.remove("active");
+    }
+
+    function formatDateDisplay(rawDate) {
+        if (!rawDate || rawDate === '-' || rawDate === '') return '-';
+        if (typeof rawDate === 'string' && !rawDate.includes('GMT') && !rawDate.includes('T')) {
+            return rawDate;
+        }
+
+        const d = new Date(rawDate);
+        if (isNaN(d.getTime())) return rawDate;
+
+        const day = d.getUTCDate();
+        const monthName = dzMonths[d.getUTCMonth()];
+        const year = d.getUTCFullYear();
+
+        return `${day} ${monthName} ${year}`;
+    }
+
+    window.onload = function() {
+        const session = JSON.parse(localStorage.getItem("userSession"));
+        if (!session || session.role !== "inspector") {
+            window.location.href = "login.html";
+        } else {
+            currentUsername = session.username;
+            fetchDistrictName();
+            loadInspectorData();
+            setInterval(checkNewMessages, 10000);
+        }
+    };
+
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+
+        if (tabId === 'chatTab') {
+            loadInspectorChat();
+        }
+    }
+
+    async function loadInspectorData() {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getInspectorData" })
+            });
+            const result = await response.json();
+
+            if (result.status === "success") {
+                allSchools = result.schools || [];
+                allTeachers = result.teachers || [];
+                currentFilteredTeachers = [...allTeachers];
+
+                populateSchoolFilter(allSchools);
+                populateChatTargets(allSchools);
+                renderTeachers(allTeachers);
+                updateStatistics();
+                filterTeachersByYearsLag();
+            }
+        } catch (error) {
+            console.error("خطأ في جلب البيانات:", error);
+        }
+    }
+
+    function updateStatistics() {
+        document.getElementById("statSchoolsCount").textContent = allSchools.length;
+        document.getElementById("statTeachersCount").textContent = allTeachers.length;
+
+        let confirmed = 0;
+        let unconfirmed = 0;
+        let inspected = 0;
+        let guidance = 0;
+
+        allTeachers.forEach(t => {
+            if (t.confirmationDate && t.confirmationDate.toString().trim() !== '' && t.confirmationDate !== '-') {
+                confirmed++;
+            } else {
+                unconfirmed++;
+            }
+
+            if (t.lastInspectionDate && t.lastInspectionDate.toString().trim() !== '' && t.lastInspectionDate !== '-') {
+                inspected++;
+            }
+
+            if (t.lastGuidanceVisitDate && t.lastGuidanceVisitDate.toString().trim() !== '' && t.lastGuidanceVisitDate !== '-') {
+                guidance++;
+            }
+        });
+
+        document.getElementById("statConfirmedCount").textContent = confirmed;
+        document.getElementById("statUnconfirmedCount").textContent = unconfirmed;
+        document.getElementById("statInspectedCount").textContent = inspected;
+        document.getElementById("statGuidanceCount").textContent = guidance;
+    }
+
+    function filterTeachersByYearsLag() {
+        const type = document.getElementById("filterType").value;
+        const inputYearsVal = parseInt(document.getElementById("inputYears").value) || 0;
+        const selectedSchool = document.getElementById("lagSchoolFilter").value;
+        const selectedClass = document.getElementById("lagClassFilter").value;
+        const tbody = document.getElementById("dateFilteredTableBody");
+        const currentYear = 2026;
+
+        let matched = allTeachers.filter(t => {
+            const matchSchool = !selectedSchool || t.schoolId === selectedSchool;
+            const matchClass = !selectedClass || t.assignedClass === selectedClass;
+            if (!matchSchool || !matchClass) return false;
+
+            let targetDateStr = (type === 'inspection') ? t.lastInspectionDate : t.lastGuidanceVisitDate;
+            if (!targetDateStr || targetDateStr === '-' || targetDateStr === '') return true;
+
+            let d = new Date(targetDateStr);
+            let teacherYear = isNaN(d.getTime()) ? null : d.getUTCFullYear();
+            
+            if (!teacherYear && typeof targetDateStr === 'string') {
+                for (let y = 2015; y <= currentYear; y++) {
+                    if (targetDateStr.includes(y.toString())) {
+                        teacherYear = y;
+                        break;
+                    }
+                }
+            }
+
+            if (!teacherYear) return true;
+
+            let diffYears = currentYear - teacherYear;
+            return diffYears >= inputYearsVal;
+        });
+
+        if (matched.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='6' style='text-align: center; color: var(--text-muted);'>لا توجد نتائج مطابقة للمعايير المحددة.</td></tr>";
+            return;
+        }
+
+        tbody.innerHTML = matched.map(t => {
+            let dateVal = (type === 'inspection') ? t.lastInspectionDate : t.lastGuidanceVisitDate;
+            if (!dateVal || dateVal === '-' || dateVal === '') {
+                return `
+                    <tr>
+                        <td><b>${t.fullName}</b></td>
+                        <td><span class="badge">${t.schoolName}</span></td>
+                        <td><span class="class-highlight">${t.assignedClass}</span></td>
+                        <td><span class="score-highlight">${t.inspectionScore || '-'}</span></td>
+                        <td>لم يتم تسجيل أي تاريخ</td>
+                        <td><span style="color: var(--danger); font-weight: bold;">لم يُسجل من قبل (تأخر كامل)</span></td>
+                    </tr>
+                `;
+            }
+
+            let d = new Date(dateVal);
+            let tYear = isNaN(d.getTime()) ? null : d.getUTCFullYear();
+            if (!tYear && typeof dateVal === 'string') {
+                for (let y = 2015; y <= currentYear; y++) {
+                    if (dateVal.includes(y.toString())) { tYear = y; break; }
+                }
+            }
+
+            let diffYears = tYear ? (currentYear - tYear) : inputYearsVal;
+            let lagText = `مر على آخر تفتيش ${diffYears} سنوات`;
+
+            return `
+                <tr>
+                    <td><b>${t.fullName}</b></td>
+                    <td><span class="badge">${t.schoolName}</span></td>
+                    <td><span class="class-highlight">${t.assignedClass}</span></td>
+                    <td><span class="score-highlight">${t.inspectionScore || '-'}</span></td>
+                    <td>${formatDateDisplay(dateVal)}</td>
+                    <td><span style="color: var(--danger); font-weight: bold;">${lagText}</span></td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+    function populateSchoolFilter(schools) {
+        const select = document.getElementById("schoolFilter");
+        const lagSelect = document.getElementById("lagSchoolFilter");
+        
+        let optionsHtml = '<option value="">جميع المدارس</option>';
+        schools.forEach(s => {
+            optionsHtml += `<option value="${s.id}">${s.name} (المدير: ${s.assignedDirector})</option>`;
+        });
+
+        select.innerHTML = optionsHtml;
+        if (lagSelect) lagSelect.innerHTML = optionsHtml;
+    }
+
+    function populateChatTargets(schools) {
+        const select = document.getElementById("chatTargetSelect");
+        select.innerHTML = '<option value="admin">مدير النظام (الأدمن)</option>';
+        schools.forEach(s => {
+            if (s.assignedDirector && s.assignedDirector !== 'غير مسند') {
+                select.innerHTML += `<option value="${s.assignedDirector}">مدير مدرسة ${s.name} (${s.assignedDirector})</option>`;
+            }
+        });
+    }
+
+    async function checkNewMessages() {
+        try {
+            const targetUser = document.getElementById("chatTargetSelect") ? document.getElementById("chatTargetSelect").value : "admin";
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "getMessages", user1: currentUsername, user2: targetUser })
+            });
+            const result = await response.json();
+            if (result.status === "success" && result.messages) {
+                const count = result.messages.length;
+                const badge = document.getElementById("chatNotificationBadge");
+                if (badge) {
+                    if (count > 0) {
+                        badge.textContent = count;
+                        badge.style.display = "inline-block";
+                    } else {
+                        badge.style.display = "none";
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("خطأ في تحديث الإشعارات", e);
+        }
+    }
+
+    function exportInspectorTeachersExcel() {
+        if (currentFilteredTeachers.length === 0) return alert("لا توجد بيانات مطابقة لتصديرها.");
+        const exportData = currentFilteredTeachers.map(t => ({
+            "المدرسة": t.schoolName,
+            "الاسم واللقب": t.fullName,
+            "اللقب الأصلي للزوجة": t.maidenName || "-",
+            "تاريخ ومكان الميلاد": t.birthInfo || "-",
+            "الإطار": t.framework,
+            "الصنف": t.category,
+            "الدرجة": t.grade,
+            "تاريخ السريان": formatDateDisplay(t.effectiveDate),
+            "نقطة التفتيش": t.inspectionScore || "-",
+            "تاريخ آخر تفتيش": formatDateDisplay(t.lastInspectionDate),
+            "تاريخ آخر زيارة توجيهية": formatDateDisplay(t.lastGuidanceVisitDate),
+            "تاريخ أول تعيين": formatDateDisplay(t.firstAppointmentDate),
+            "تاريخ التثبيت": formatDateDisplay(t.confirmationDate),
+            "الشهادة والمؤهل العلمي": t.degreeSubject || "-",
+            "القسم المسند": t.assignedClass
+        }));
+        
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "تقرير الأساتذة");
+        XLSX.writeFile(workbook, "تقرير_الوضعية_الإدارية_المفتشية.xlsx");
+    }
+
+    function printInspectorTeachersPDF() {
+        window.print();
+    }
+
+    async function loadInspectorChat() {
+        const targetUser = document.getElementById("chatTargetSelect").value;
+        const chatBox = document.getElementById("inspectorChatBox");
+        if (!targetUser) return;
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "getMessages", user1: currentUsername, user2: targetUser })
+        });
+        const result = await response.json();
+
+        if (result.status === "success") {
+            const messages = result.messages || [];
+            if (messages.length === 0) {
+                chatBox.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 100px;">لا توجد رسائل سابقة.</div>';
+            } else {
+                chatBox.innerHTML = messages.map(m => `
+                    <div class="chat-message ${m.sender === currentUsername ? 'sent' : 'received'}">
+                        <div>${m.text}</div>
+                    </div>
+                `).join("");
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    }
+
+    async function sendInspectorMessage() {
+        const targetUser = document.getElementById("chatTargetSelect").value;
+        const msgInput = document.getElementById("inspectorChatMessage");
+        const text = msgInput.value.trim();
+
+        if (!targetUser) return alert("اختر طرفاً للمراسلة أولاً.");
+        if (!text) return alert("اكتب رسالة أولاً.");
+
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "sendMessage", sender: currentUsername, receiver: targetUser, message: text })
+        });
+        const result = await response.json();
+
+        if (result.status === "success") {
+            msgInput.value = "";
+            loadInspectorChat();
+        }
+    }
+
+    function confirmDeleteInspectorChat() {
+        const targetUser = document.getElementById("chatTargetSelect").value;
+        if (!targetUser) return alert("يرجى اختيار طرف للمراسلة أولاً لحذف المحادثة معه.");
+        
+        showModal("تنبيه حذف المحادثة", "هل أنت متأكد من حذف هذه المحادثة بالكامل؟ لا يمكن التراجع عن هذا الإجراء.", function() {
+            executeDeleteInspectorChat(targetUser);
+        }, "btn-danger");
+    }
+
+    async function executeDeleteInspectorChat(targetUser) {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "deleteMessages", user1: currentUsername, user2: targetUser })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            alert(result.message);
+            loadInspectorChat();
+        }
+    }
+
+    function applyFilters() {
+        const selectedSchool = document.getElementById("schoolFilter").value;
+        const selectedClass = document.getElementById("classFilter").value;
+        const sortInspection = document.getElementById("sortInspection").value;
+        const sortGuidance = document.getElementById("sortGuidance").value;
+        const searchText = document.getElementById("searchName").value.trim().toLowerCase();
+
+        let filtered = allTeachers.filter(t => {
+            const matchSchool = !selectedSchool || t.schoolId === selectedSchool;
+            const matchClass = !selectedClass || t.assignedClass === selectedClass;
+            const matchName = !searchText || t.fullName.toLowerCase().includes(searchText);
+
+            return matchSchool && matchClass && matchName;
+        });
+
+        if (sortInspection) {
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.lastInspectionDate).getTime() || 0;
+                const dateB = new Date(b.lastInspectionDate).getTime() || 0;
+                return sortInspection === "desc" ? dateB - dateA : dateA - dateB;
+            });
+        }
+
+        if (sortGuidance) {
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.lastGuidanceVisitDate).getTime() || 0;
+                const dateB = new Date(b.lastGuidanceVisitDate).getTime() || 0;
+                return sortGuidance === "desc" ? dateB - dateA : dateA - dateB;
+            });
+        }
+
+        currentFilteredTeachers = filtered;
+        renderTeachers(filtered);
+    }
+
+    function renderTeachers(teachers) {
+        const tbody = document.getElementById("teachersTableBody");
+        document.getElementById("teacherCount").textContent = teachers.length;
+
+        if (teachers.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='15' style='text-align: center; color: var(--text-muted);'>لا توجد نتائج مطابقة للبحث.</td></tr>";
+            return;
+        }
+
+        tbody.innerHTML = teachers.map(t => `
+            <tr>
+                <td><span class="badge">${t.schoolName}</span></td>
+                <td><b>${t.fullName}</b></td>
+                <td>${t.maidenName || '-'}</td>
+                <td>${t.birthInfo || '-'}</td>
+                <td>${t.framework}</td>
+                <td>${t.category}</td>
+                <td>${t.grade}</td>
+                <td>${formatDateDisplay(t.effectiveDate)}</td>
+                <td><span class="score-highlight">${t.inspectionScore || '-'}</span></td>
+                <td>${formatDateDisplay(t.lastInspectionDate)}</td>
+                <td>${formatDateDisplay(t.lastGuidanceVisitDate)}</td>
+                <td>${formatDateDisplay(t.firstAppointmentDate)}</td>
+                <td>${formatDateDisplay(t.confirmationDate)}</td>
+                <td>${formatDateDisplay(t.degreeSubject || '-')}</td>
+                <td><span class="class-highlight">${t.assignedClass}</span></td>
+            </tr>
+        `).join("");
+    }
+
+    function logout() {
+        localStorage.removeItem("userSession");
+        window.location.href = "index.html";
+    }
+</script>
+</body>
+</html>
