@@ -1,1 +1,1 @@
-# youb2-edu
+# edu-status
